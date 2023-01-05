@@ -1,0 +1,220 @@
+<html>
+  <head>
+    <meta http-equiv="refresh" content="60;url=http://" />
+    <style>
+      body {
+        background-color: #1d0f4a;
+        background-image: linear-gradient(45deg, #1d0f4a, #4b1989, #5d3d8f);
+        color: #e8e0f0;
+        font-family: helvetica, sans-serif;
+        font-size: 1.2em;
+      }
+
+      h1 {
+        color: #e8e0f0;
+        text-align: center;
+      }
+
+      .subheading {
+        color: #b4adc8;
+        text-align: center;
+      }
+
+      .dataMain,
+      .dataMain2 {
+        background-color: #281b54;
+        border-radius: 25px;
+        padding: 20px;
+        /* width: 80%; */
+        /* height: 1%; */
+        margin: 0 auto;
+        margin-bottom: 1.2em;
+      }
+
+      .heatOn {
+        color: #30e3b5;
+      }
+      .heatOff {
+        color: #c33769;
+      }
+
+      .alert {
+        background-color: #281b54;
+        border-radius: 25px;
+        padding: 20px;
+
+        width: 50em;
+        /*
+        height: 10%;
+        */
+        margin: 0 auto;
+        margin-bottom: 1.2em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #c33769;
+      }
+
+      .inputBox,
+      select,
+      textarea {
+        color: #e8e0f0;
+        background-color: #281b54;
+        border-radius: 0.5em;
+        width: 35px;
+        height: 30px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 5px;
+      }
+
+      textarea:focus,
+      input:focus {
+        background-color: #e8e0f0;
+        color: black;
+        font-weight: normal;
+      }
+
+      .dataMain2 {
+        display: table;
+        width: 40%;
+      }
+
+      a {
+        color: black;
+        text-decoration: none;
+      }
+
+      .empty {
+        width: 67%;
+      }
+
+      .submit,
+      .refresh,
+      .clearData {
+        transition: all 0.8s;
+        background-color: #756d92;
+        border: 0.3em solid #756d92;
+        border-radius: 0.5em;
+        color: black;
+        font-weight: bold;
+      }
+
+      .refresh {
+        float: left;
+      }
+
+      .clearData {
+        float: right;
+      }
+
+      .submit:hover,
+      .refresh:hover,
+      .clearData:hover,
+      a:hover {
+        color: rgba(255, 255, 255, 1);
+        box-shadow: 0 5px 15px rgba(145, 92, 182, 1);
+      }
+      /*
+      @media screen and (max-width: 793px) {
+        .dataMain2 {
+          width: 100%;
+        }
+      }
+      */
+    </style>
+  </head>
+  <body>
+    <form action="http://" method="POST">
+      <h1>Chicken Coop Thermostat</h1>
+      <p class="subheading">ESP8266-12E DHT Thermostat Controlled Relay IoT</p>
+      <div class="alert">Error message: Unable to connect to WiFi</div>
+
+      <table class="dataMain">
+        <tr>
+          <td>
+            <div>Heat On Setting: &le; 32&deg; F</div>
+            <div>Heat Off Setting: &ge; 36&deg; F</div>
+          </td>
+          <td>
+            Heat On: &le;
+            <input
+              class="inputBox"
+              type="text"
+              value="32"
+              name="heatOn"
+              maxlength="3"
+              size="2"
+            /><br />
+            Heat Off: &ge;
+            <input
+              class="inputBox"
+              type="text"
+              value="36"
+              name="heatOff"
+              maxlength="3"
+              size="2"
+            /><br />
+          </td>
+          <td>
+            Sample Rate (seconds):
+            <input
+              type="text"
+              class="inputBox"
+              value="60"
+              name="sRate"
+              maxlength="3"
+              size="2"
+            /><br />
+            Maximum Chart Data:
+            <input
+              type="text"
+              class="inputBox"
+              value="100"
+              name="maxData"
+              maxlength="3"
+              size="2"
+            /><br />
+          </td>
+          <td>
+            <input class="submit" type="submit" value="Submit" />
+          </td>
+        </tr>
+      </table>
+
+      <table class="dataMain">
+        <tr>
+          <td>
+            <div><b>Last Readings</b></div>
+            <div class="heatOn">Heat is <b>ON</b></div>
+            <div class="heatOff">Heat is <b>OFF</b></div>
+            <div>Temperature: 40&deg; F</div>
+            <div>Humidity: 54%</div>
+
+            <div>Data Lines: 100</div>
+
+            <div>Sample Rate: 60 seconds</div>
+          </td>
+          <td>
+            <div id="chart_divTemp" style="width: 250px"></div>
+          </td>
+          <td>
+            <div id="chart_divHumid" style="width: 250px"></div>
+          </td>
+        </tr>
+      </table>
+      <div id="curve_chart" style="width: 1000px; height: 500px"></div>
+
+      <div class="dataMain2">
+        <button class="refresh" type="button">
+          <a href="http://"
+            >Refresh
+            <button class="clearData" type="button">
+              <a href="/clear">Clear Data </a>
+            </button></a
+          >
+        </button>
+      </div>
+    </form>
+  </body>
+</html>

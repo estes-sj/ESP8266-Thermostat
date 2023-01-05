@@ -1,0 +1,189 @@
+<!-- from https://github.com/dmainmon/ESP8266-12E-DHT-Thermostat-->
+<html>
+  <head>
+    <meta http-equiv="refresh" content="60;url=http://" />
+
+    <script
+      type="text/javascript"
+      src="https://www.gstatic.com/charts/loader.js"
+    ></script>
+    <script type="text/javascript">
+      google.charts.load("current", { packages: ["corechart", "gauge"] });
+      google.charts.setOnLoadCallback(drawTempChart);
+      google.charts.setOnLoadCallback(drawHumidChart);
+      google.charts.setOnLoadCallback(drawChart);
+
+      // draw temp guage
+      function drawTempChart() {
+        var data = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["Temp\xB0"],
+        ]);
+        // setup the google chart options here
+        var options = {
+          width: 250,
+          height: 150,
+          min: -10,
+          max: 120,
+          greenFrom: -10,
+          greenTo: " + String(heatOn) + ",
+          yellowFrom: " + String(heatOn) + ",
+          yellowTo: " + String(heatOff) + ",
+          redFrom: " + String(heatOff) + ",
+          redTo: 120,
+          minorTicks: 5,
+        };
+        var chart = new google.visualization.Gauge(
+          document.getElementById("chart_divTemp")
+        );
+        chart.draw(data, options);
+      }
+
+      // draw humidity guage
+      function drawHumidChart() {
+        var data = google.visualization.arrayToDataTable([
+          ["Label", "Value"],
+          ["Humidity"],
+        ]);
+        // setup the google chart options here
+        var options = {
+          width: 250,
+          height: 150,
+          min: 0,
+          max: 100,
+          greenFrom: 0,
+          greenTo: 25,
+          yellowFrom: 25,
+          yellowTo: 75,
+          redFrom: 75,
+          redTo: 100,
+          minorTicks: 5,
+        };
+        var chart = new google.visualization.Gauge(
+          document.getElementById("chart_divHumid")
+        );
+        chart.draw(data, options);
+      }
+
+      // draw main graph
+      function drawChart() {
+        var data = google.visualization.arrayToDataTable([
+          ["Hit", "Temp F", "Humidity"],
+
+          // open file for reading
+        ]);
+        var options = {
+          title: "Temp/Humidity Activity",
+          curveType: "function",
+
+          series: {
+            0: { targetAxisIndex: 0 },
+            1: { targetAxisIndex: 1 },
+          },
+
+          vAxes: {
+            // Adds titles to each axis.
+            0: { title: "Temp Fahrenheit" },
+            1: { title: "Humidity %" },
+          },
+
+          hAxes: {
+            // Adds titles to each axis.
+            0: { title: "Heat On/Off" },
+            1: { title: "" },
+          },
+
+          legend: { position: "bottom" },
+        };
+
+        var chart = new google.visualization.LineChart(
+          document.getElementById("curve_chart")
+        );
+
+        chart.draw(data, options);
+      }
+
+      ////////////
+    </script>
+  </head>
+  <body>
+    <form action="http://submit" method="POST">
+      <h1>ESP8266-12E DHT Thermostat IoT</h1>
+      <div style="color: red">webMessage</div>
+
+      <table style="width: 800px">
+        <tr>
+          <td>
+            <div>Heat On Setting: &le; &deg; F</div>
+            <div>Heat Off Setting: &ge; &deg; F</div>
+          </td>
+          <td style="text-align: right">
+            Heat On: &le;
+            <input
+              type="text"
+              value="123"
+              name="heatOn"
+              maxlength="3"
+              size="2"
+            /><br />
+            Heat Off: &ge;
+            <input
+              type="text"
+              value="123"
+              name="heatOff"
+              maxlength="3"
+              size="2"
+            /><br />
+          </td>
+          <td style="text-align: right">
+            Sample Rate (seconds):
+            <input
+              type="text"
+              value="123"
+              name="sRate"
+              maxlength="3"
+              size="2"
+            /><br />
+            Maximum Chart Data:
+            <input
+              type="text"
+              value="123"
+              name="maxData"
+              maxlength="3"
+              size="2"
+            /><br />
+          </td>
+          <td>
+            <input type="submit" value="Submit" />
+          </td>
+        </tr>
+      </table>
+
+      <table style="width: 800px">
+        <tr>
+          <td>
+            <div style="width: 300px"><b>Last Readings</b></div>
+            <div>Temperature: 123&deg; F</div>
+            <div>Humidity: 123%</div>
+
+            <div>Heat is OFF</div>
+            <div>Heat is ON</div>
+
+            <div>Data Lines: 123</div>
+            <div>Sample Rate: 123 seconds</div>
+
+            <div><a href="http://">Refresh</a></div>
+          </td>
+          <td>
+            <div id="chart_divTemp" style="width: 250px"></div>
+          </td>
+          <td>
+            <div id="chart_divHumid" style="width: 250px"></div>
+          </td>
+        </tr>
+      </table>
+      <div id="curve_chart" style="width: 1000px; height: 500px"></div>
+      <div><a href="/clear">Clear Data</a></div>
+    </form>
+  </body>
+</html>
