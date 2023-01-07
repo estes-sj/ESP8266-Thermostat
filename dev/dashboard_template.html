@@ -1,10 +1,35 @@
 <html>
   <head>
-    <meta http-equiv="refresh" content="60;url=http://" />
+    <meta charset="UTF-8" />
+    <!-- Content media screen support -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!--
+      This is used for content refresh since we will be using a static webpage
+      <meta http-equiv="refresh" content="60;url=http://" /> -->
     <style>
       body {
         background-color: #1d0f4a;
         background-image: linear-gradient(45deg, #1d0f4a, #4b1989, #5d3d8f);
+        background: -webkit-gradient(
+          linear,
+          left top,
+          right top,
+          color-stop(0%, transparent),
+          color-stop(50%, rgb(110, 48, 48)),
+          color-stop(100%, transparent)
+        ); /* Chrome, Safari4+ */
+        background: -webkit-linear-gradient (-45deg, red, blue); /* Chrome10+, Safari5.1+ */
+        background-image: -moz-linear-gradient(
+          45deg,
+          #1d0f4a,
+          #5d3d8f
+        ); /* FF3.6+ */
+        background: linear-gradient(
+          45deg,
+          #1d0f4a,
+          #4b1989,
+          #5d3d8f
+        ); /* W3C This appeared on my chrome desktop*/
         color: #e8e0f0;
         font-family: helvetica, sans-serif;
         font-size: 1.2em;
@@ -21,7 +46,7 @@
       }
 
       .dataMain,
-      .dataMain2 {
+      .navigation {
         background-color: #281b54;
         border-radius: 25px;
         padding: 20px;
@@ -43,7 +68,7 @@
         border-radius: 25px;
         padding: 20px;
 
-        width: 50em;
+        width: 40em;
         /*
         height: 10%;
         */
@@ -75,7 +100,7 @@
         font-weight: normal;
       }
 
-      .dataMain2 {
+      .navigation {
         display: table;
         width: 40%;
       }
@@ -115,13 +140,23 @@
         color: rgba(255, 255, 255, 1);
         box-shadow: 0 5px 15px rgba(145, 92, 182, 1);
       }
-      /*
-      @media screen and (max-width: 793px) {
-        .dataMain2 {
-          width: 100%;
-        }
+
+      #chart_divTemp,
+      #chart_divTemp img,
+      #chart_divHumid,
+      #chart_divHumid img {
+        width: 150px;
+        height: 150px;
       }
-      */
+
+      #curve_chart,
+      #curve_chart img {
+        width: 600px;
+        height: 300px;
+      }
+
+      @media (max-width: 900px) {
+      }
     </style>
   </head>
   <body>
@@ -196,16 +231,22 @@
             <div>Sample Rate: 60 seconds</div>
           </td>
           <td>
-            <div id="chart_divTemp" style="width: 250px"></div>
+            <div id="chart_divTemp">
+              <img src="assets/bmuk2.png" alt="Sample Gauge" />
+            </div>
           </td>
           <td>
-            <div id="chart_divHumid" style="width: 250px"></div>
+            <div id="chart_divHumid">
+              <img src="assets/bmuk2.png" alt="Sample Gauge" />
+            </div>
           </td>
         </tr>
       </table>
-      <div id="curve_chart" style="width: 1000px; height: 500px"></div>
+      <div id="curve_chart">
+        <img src="assets/WGpta.png" alt="Sample Chart" />
+      </div>
 
-      <div class="dataMain2">
+      <div class="navigation">
         <button class="refresh" type="button">
           <a href="http://"
             >Refresh
