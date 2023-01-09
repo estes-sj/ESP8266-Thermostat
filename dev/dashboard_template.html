@@ -26,8 +26,8 @@
         ); /* FF3.6+ */
         background: linear-gradient(
           45deg,
-          #1d0f4a,
-          #4b1989,
+          #1a162b,
+          #4c1e83,
           #5d3d8f
         ); /* W3C This appeared on my chrome desktop*/
         color: #e8e0f0;
@@ -38,6 +38,9 @@
       h1 {
         color: #e8e0f0;
         text-align: center;
+        padding-top: 0.4em;
+        font-size: 2.2em;
+        font-weight: 900;
       }
 
       .subheading {
@@ -46,12 +49,11 @@
       }
 
       .dataMain,
-      .navigation {
+      .navigation,
+      #curve_chart {
         background-color: #281b54;
         border-radius: 25px;
         padding: 20px;
-        /* width: 80%; */
-        /* height: 1%; */
         margin: 0 auto;
         margin-bottom: 1.2em;
       }
@@ -67,11 +69,7 @@
         background-color: #281b54;
         border-radius: 25px;
         padding: 20px;
-
-        width: 40em;
-        /*
-        height: 10%;
-        */
+        width: 40%;
         margin: 0 auto;
         margin-bottom: 1.2em;
         text-align: center;
@@ -147,6 +145,7 @@
       #chart_divHumid img {
         width: 150px;
         height: 150px;
+        border-radius: 50%;
       }
 
       #curve_chart,
@@ -154,6 +153,36 @@
         width: 600px;
         height: 300px;
       }
+      #curve_chart img {
+        /* border-radius: 10%; */
+        border: 10px solid #281b54;
+      }
+
+      /* Remove keyframes and span animation before deployment, only meant to test different settings */
+      span::before {
+        content: "Heat is ON";
+        color: #30e3b5;
+        animation: animate infinite 3s;
+      }
+      .heatOn {
+        text-indent: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        display: none;
+      }
+      .heatOff {
+        text-indent: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        display: none;
+      }
+      @keyframes animate {
+        50% {
+          content: "Heat is OFF";
+          color: #c33769;
+        }
+      }
+      /* End of removal */
 
       @media (max-width: 900px) {
       }
@@ -163,8 +192,36 @@
     <form action="http://" method="POST">
       <h1>Chicken Coop Thermostat</h1>
       <p class="subheading">ESP8266-12E DHT Thermostat Controlled Relay IoT</p>
-      <div class="alert">Error message: Unable to connect to WiFi</div>
+      <div class="alert">
+        <!-- Remove span and break -->
+        <span></span><br />
+        <div class="heatOn">Heat is <b>ON</b></div>
+        <div class="heatOff">Heat is <b>OFF</b></div>
+        <p>Error message: This is a sample error message</p>
+      </div>
+      <table class="dataMain">
+        <tr>
+          <td>
+            <div><b>Last Readings</b></div>
+            <div>Temperature: 40&deg; F</div>
+            <div>Humidity: 54%</div>
 
+            <div>Data Lines: 100</div>
+
+            <div>Sample Rate: 60 seconds</div>
+          </td>
+          <td>
+            <div id="chart_divTemp">
+              <img src="assets/bmuk2.png" alt="Sample Gauge" />
+            </div>
+          </td>
+          <td>
+            <div id="chart_divHumid">
+              <img src="assets/bmuk2.png" alt="Sample Gauge" />
+            </div>
+          </td>
+        </tr>
+      </table>
       <table class="dataMain">
         <tr>
           <td>
@@ -213,32 +270,6 @@
           </td>
           <td>
             <input class="submit" type="submit" value="Submit" />
-          </td>
-        </tr>
-      </table>
-
-      <table class="dataMain">
-        <tr>
-          <td>
-            <div><b>Last Readings</b></div>
-            <div class="heatOn">Heat is <b>ON</b></div>
-            <div class="heatOff">Heat is <b>OFF</b></div>
-            <div>Temperature: 40&deg; F</div>
-            <div>Humidity: 54%</div>
-
-            <div>Data Lines: 100</div>
-
-            <div>Sample Rate: 60 seconds</div>
-          </td>
-          <td>
-            <div id="chart_divTemp">
-              <img src="assets/bmuk2.png" alt="Sample Gauge" />
-            </div>
-          </td>
-          <td>
-            <div id="chart_divHumid">
-              <img src="assets/bmuk2.png" alt="Sample Gauge" />
-            </div>
           </td>
         </tr>
       </table>
