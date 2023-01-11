@@ -8,7 +8,7 @@
 #include <FS.h> // FOR SPIFFS
 #include <ctype.h> // for isNumber check
 #include <DHT.h>
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22
 #define DHTPIN D4 // D4 or 2
 #define RELAYPIN D2 // D2 or 4
 
@@ -29,7 +29,7 @@ ESP8266WebServer server(80);
 // Initialize DHT sensor
 
 // This is for the ESP8266 processor on ESP-01
-DHT dht(DHTPIN, DHTTYPE, 11); // 11 works fine for ESP8266
+DHT dht(DHTPIN, DHTTYPE, 22); // 11 works fine for ESP8266
 
 float humidity, temp_f;  // Values read from sensor
 String webString = "";   // String to display

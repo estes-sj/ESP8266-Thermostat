@@ -8,15 +8,15 @@
 #include <FS.h> // FOR SPIFFS
 #include <ctype.h> // for isNumber check
 #include <DHT.h>
-#define DHTTYPE DHT11
+#define DHTTYPE DHT22
 #define DHTPIN D4 // D4 or 2
 #define RELAYPIN D2 // D2 or 4
 
 const char* ssid     = "";
 const char* password = "";
 
-int heatOn = 69;
-int heatOff = 73;
+int heatOn = 78;
+int heatOff = 79;
 String relayState = "OFF";
 const static String fName = "prop.txt";
 const static String dfName = "data.txt";
@@ -29,7 +29,7 @@ ESP8266WebServer server(80);
 // Initialize DHT sensor
 
 // This is for the ESP8266 processor on ESP-01
-DHT dht(DHTPIN, DHTTYPE, 11); // 11 works fine for ESP8266
+DHT dht(DHTPIN, DHTTYPE, 22); // 11 works fine for ESP8266
 
 float humidity, temp_f;  // Values read from sensor
 String webString = "";   // String to display
@@ -60,8 +60,8 @@ void gettemperature() {
   }
   else if (temp_f >= heatOff)
   {
-    digitalWrite(RELAYPIN, HIGH);
-    relayState = "ON";
+    digitalWrite(RELAYPIN, LOW);
+    relayState = "OFF"; 
   }
 }
 
@@ -511,20 +511,9 @@ void setup(void)
 
   pinMode(RELAYPIN, OUTPUT);
   digitalWrite(RELAYPIN, LOW);
-  // Connect to WiFi network
-  WiFi.begin(ssid, password);
-  WiFi.config(IPAddress(192, 168, 1, 201), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
 
-  Serial.print("\n\r \n\rWorking to connect");
+  Serial.print("\n\r \n\Running in offline mode");
 
-  // Wait for connection
-
-  Serial.println("");
-  Serial.println("DHT Server");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
 
   dht.begin();           // initialize temperature sensor
   delay(10);
@@ -600,32 +589,8 @@ void setup(void)
   gettemperature();
   // update the datafile to start a new session
   updateDataFile();
-
-  // web client handlers
-  server.on("/", handle_root);
-
-  server.on("/submit", handle_submit);
-
-  server.on("/clear", []() {
-    // handler for http://iPaddress/clear
-
-    // deletes all the stored data for temp and humidity
-    clearDataFile();
-
-    webMessage = "Data Cleared";
-
-    // read the DHT and use new values to start new file data
-    gettemperature();
-    updateDataFile();
-    setHTML(); // this will set the webString varialbe with HTML
-    server.send(200, "text/html", webString);            // send to someones browser when asked
-    delay(100);
-
-  });
-
-  // start the web server
-  server.begin();
-  Serial.println("HTTP server started");
+  
+  Serial.println("HTTP server will not be started");
 
 }
 
@@ -653,7 +618,5 @@ void loop(void)
     updateDataFile();
     readDataFile();
   }
-
-  server.handleClient();
 
 }
