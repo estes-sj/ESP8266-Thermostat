@@ -7,18 +7,13 @@
 *********/
 
 // Import required libraries
-#ifdef ESP32
-  #include <WiFi.h>
-  #include <AsyncTCP.h>
-#else
-  #include <ESP8266WiFi.h>
-  #include <ESPAsyncTCP.h>
-#endif
+#include <ESP8266WiFi.h>
+#include <ESPAsyncTCP.h>
 #include <ESPAsyncWebServer.h>
-
+  
 // Replace with your network credentials
-const char* ssid = "REPLACE_WITH_YOUR_SSID";
-const char* password = "REPLACE_WITH_YOUR_PASSWORD";
+const char* ssid = "I killed your cat; sorry";
+const char* password = "35micesaved";
 
 const char* http_username = "admin";
 const char* http_password = "admin";
@@ -126,6 +121,7 @@ void setup(){
   
   // Connect to Wi-Fi
   WiFi.begin(ssid, password);
+  WiFi.config(IPAddress(192, 168, 1, 201), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi..");
