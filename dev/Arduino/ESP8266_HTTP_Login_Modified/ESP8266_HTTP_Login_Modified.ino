@@ -60,12 +60,32 @@ void gettemperature() {
 
   // Reading temperature or humidity takes about 250 milliseconds!
   // Sensor readings may also be up to 2 seconds 'old' (it's a very slow sensor)
-  humidity = dht.readHumidity();          // Read humidity (percent)
-  temp_f = dht.readTemperature(true);     // Read temperature as Fahrenheit
+  // Temporarily store the new reading before replacing the last reading with a failed reading
+  float new_humidity = dht.readHumidity();          // Read humidity (percent)
+  float new_temp_f = dht.readTemperature(true);     // Read temperature as Fahrenheit
   // Check if any reads failed and exit
+  // If the graph continues to have the exact reading for a long period of time
+  // then that may be an indication of the sensor not reading since the values will
+  // not be updated in those cases
   if (isnan(humidity) || isnan(temp_f)) {
-    Serial.println("Failed to read from DHT sensor!");
+    Serial.println("Failed to read from DHT sensor! (Not a Number)");
     return;
+  }
+  // Max range DHT22 can support
+  else if (temp_f <= -40 || temp_f >= 257) {
+    Serial.println("Failed to read from DHT sensor! (Critical Temperature/Extreme Value)");
+    return;
+  }
+  /*
+  // Signs of inacurate reading
+  else if (humidity <= 0) {
+    Serial.println("Failed to read from DHT sensor! (Extreme Value)");
+    return;
+  }
+  */
+  else {
+     humidity = new_humidity;
+     temp_f = new_temp_f;
   }
 
   // turn the relay switch Off or On depending on the temperature reading
@@ -79,7 +99,6 @@ void gettemperature() {
     digitalWrite(RELAYPIN, LOW);
     relayState = "OFF";
   }
-  Serial.println("RELAY STATE " + String(relayState));
 }
 
 /////////////////////////////////////////////////
@@ -302,11 +321,14 @@ const char logout_html[] PROGMEM = R"rawliteral(
 </html>
 )rawliteral";
 
+// Remember to remove any instances of ");" which will prematurely close the literal
+// This is common in any javascript code
 const char home_html[] PROGMEM = R"rawliteral(
 <html>
   <head>
     <meta http-equiv="refresh" content="60;url=http://%IP_ADDR%" />
-      <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Chicken Coop Thermostat Relay</title>
     <script
       type="text/javascript"
       src="https://www.gstatic.com/charts/loader.js"
@@ -391,6 +413,12 @@ const char home_html[] PROGMEM = R"rawliteral(
         )
         chart.draw(data, options);
       }
+      function logoutButton() {
+        var xhr = new XMLHttpRequest();
+        xhr.open("GET", "/logout", true);
+        xhr.send();
+        setTimeout(function(){ window.open("/logged-out","_self"); }, 1000);
+      }
     </script>
   </head>
   <body>
@@ -460,6 +488,7 @@ const char home_html[] PROGMEM = R"rawliteral(
       <div id="curve_chart" style="width: 1000px; height: 500px"></div>
       <div><a href="/clear">Clear Data</a></div>
     </form>
+    <button onclick="logoutButton()">Logout</button>
   </body>
 </html>
 
@@ -763,7 +792,11 @@ void setup(){
     Serial.println(webMessage);
     //gettemperature();
     // Send back to home page
-    request->send_P(200, "text/html", home_html, processor);
+    request->redirect("/");
+  });
+
+  server.on("/logout", HTTP_GET, [](AsyncWebServerRequest *request){
+    request->send(401);
   });
 
   server.on("/logged-out", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -789,7 +822,7 @@ void setup(){
     Serial.println(inputMessage);
     request->send(200, "text/plain", "OK");
   });
-/*
+
   server.on("/clear", HTTP_ANY, [](AsyncWebServerRequest *request){
     // handler for http://iPaddress/clear
 
@@ -801,11 +834,11 @@ void setup(){
     // read the DHT and use new values to start new file data
     gettemperature();
     updateDataFile();
-    request->send_P(200, "text/html", home_html, processor);
+    request->redirect("/");
     delay(100);
 
   });
-*/
+
   // Start server
   server.begin();
 }
