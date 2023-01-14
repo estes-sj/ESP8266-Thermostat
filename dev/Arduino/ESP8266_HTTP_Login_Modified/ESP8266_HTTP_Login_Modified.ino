@@ -19,13 +19,17 @@
 #define RELAYPIN D2 // D2 or 4
   
 // Replace with your network credentials
-const char* ssid = "I killed your cat; sorry";
-const char* password = "35micesaved";
+const char* ssid = "";
+const char* password = "";
 
 const char* http_username = "admin";
 const char* http_password = "admin";
 
-const char* PARAM_INPUT_1 = "state";
+// Handle webpage form parameters
+const char* PARAM_INPUT_1 = "heatOn";
+const char* PARAM_INPUT_2 = "heatOff";
+const char* PARAM_INPUT_3 = "sRate";
+const char* PARAM_INPUT_4 = "maxData";
 
 const int output = 2;
 
@@ -88,7 +92,7 @@ void clearDataFile() // deletes all the stored data
   }
   else
   {
-    Serial.println("-- Data file cleared =========");
+    Serial.println("========= Data file cleared =========");
     f.close();
   }
 }
@@ -315,7 +319,7 @@ const char home_html[] PROGMEM = R"rawliteral(
       function drawTempChart() {
         var data = google.visualization.arrayToDataTable([
           ["Label", "Value"],
-          ["Temp°", %TEMPERATURE%],
+          ["F", %TEMPERATURE%],
         ])
         var options = {
           width: 250,
@@ -390,9 +394,9 @@ const char home_html[] PROGMEM = R"rawliteral(
     </script>
   </head>
   <body>
-    <form action="http://%IP_ADDR%/submit" method="POST">
+    <form action="/submit">
       <h1>ESP8266-12E DHT Thermostat IoT</h1>
-      <div style="color: red">Data Cleared</div>
+      <div style="color: red">%WEB_MSG%</div>
       <table style="width: 800px">
         <tr>
           <td>
@@ -411,8 +415,8 @@ const char home_html[] PROGMEM = R"rawliteral(
             Heat Off: &ge;
             <input
               type="text"
-              value="81"
-              name="%HEAT_OFF_TEMP%"
+              value="%HEAT_OFF_TEMP%"
+              name="heatOff"
               maxlength="3"
               size="2"
             /><br />
@@ -443,7 +447,7 @@ const char home_html[] PROGMEM = R"rawliteral(
           <td>
             <div style="width: 300px"><b>Last Readings</b></div>
             <div>Temperature: %TEMP_F2%&deg; F</div>
-            <div>Humidity: %HUMIDITY%</div>
+            <div>Humidity: %HUMIDITY%&percnt;</div>
             %HEAT_STATUS%
             <div>Data Lines: %DATA_LINES%</div>
             <div>Sample Rate: %SAMPLE_RATE% seconds</div>
@@ -552,7 +556,7 @@ void setup(){
   SPIFFS.begin();
   delay(10);
   ///////////////////
-  // SPIFFS.format(); // uncomment to completely clear data
+  //SPIFFS.format(); // uncomment to completely clear data
 
 
   File f = SPIFFS.open(fName, "r");
@@ -627,9 +631,139 @@ void setup(){
       return request->requestAuthentication();
     request->send_P(200, "text/html", home_html, processor);
   });
+
+  // setup form submit
+  server.on("/submit", HTTP_GET, [](AsyncWebServerRequest *request){
+    String inputMessage_1;
+    String inputMessage_2;
+    String inputMessage_3;
+    String inputMessage_4;
+    String inputParam_1;
+    String inputParam_2;
+    String inputParam_3;
+    String inputParam_4;
+
+    int tempON = 0;
+    int tempOFF = 0;
+    long sRate = 0;
+    int maxData = 0;
+
+    webMessage = "";
     
-  server.on("/logout", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(401);
+  // Format = http://192.168.1.201/submit?heatOn=80&heatOff=81&sRate=20&maxData=60
+  
+    if (request->hasParam(PARAM_INPUT_1)) {
+      // The name of the parameter
+      inputParam_1 = PARAM_INPUT_1;
+      // The value
+      inputMessage_1 = request->getParam(PARAM_INPUT_1)->value();
+      if (inputMessage_1 != "")
+      {
+        if (isValidNumber(inputMessage_1) )
+          tempON = inputMessage_1.toInt();
+        else
+          webMessage += "Heat On must be a number<br>";
+      }
+      else
+        webMessage += "Heat On is required<br>";
+    }
+  
+    if (request->hasParam(PARAM_INPUT_2)) {
+      // The name of the parameter
+      inputParam_2 = PARAM_INPUT_2;
+      // The value
+      inputMessage_2 = request->getParam(PARAM_INPUT_2)->value();
+      if (inputMessage_2 != "")
+      {
+        if (isValidNumber(inputMessage_2) )
+          tempOFF = inputMessage_2.toInt();
+        else
+          webMessage += "Heat On must be a number<br>";
+      }
+      else
+        webMessage += "Heat On is required<br>";
+    }
+  
+    if (request->hasParam(PARAM_INPUT_3)) {
+      // The name of the parameter
+      inputParam_3 = PARAM_INPUT_3;
+      // The value
+      inputMessage_3 = request->getParam(PARAM_INPUT_3)->value();
+      if (inputMessage_3 != "")
+      {
+        if (isValidNumber(inputMessage_3) )
+          sRate = inputMessage_3.toInt();
+        else
+          webMessage += "Heat On must be a number<br>";
+      }
+      else
+        webMessage += "Heat On is required<br>";
+    }
+  
+    if (request->hasParam(PARAM_INPUT_4)) {
+      // The name of the parameter
+      inputParam_4 = PARAM_INPUT_4;
+      // The value
+      inputMessage_4 = request->getParam(PARAM_INPUT_4)->value();
+      if (inputMessage_4 != "")
+      {
+        if (isValidNumber(inputMessage_4) )
+          maxData = inputMessage_4.toInt();
+        else
+          webMessage += "Heat On must be a number<br>";
+      }
+      else
+        webMessage += "Heat On is required<br>";
+    }
+  
+  
+    if (tempOFF <= tempON)
+      webMessage += "Heat On must be lower than Heat Off<br>";
+
+    if (sRate < 10)
+      webMessage += "Sample Rate must be greater than or equal to 10<br>";
+
+    if (maxData < 10 || maxData > 300)
+      webMessage += "Max Chart Data must be between 10 and 300<br>";
+  
+  
+    Serial.println("SUBMIT INFO");
+    Serial.println(inputMessage_1);
+    Serial.println(inputParam_1);
+    Serial.println(tempON);
+    Serial.println(PARAM_INPUT_1);
+    
+  if (webMessage == ""){
+      heatOn = tempON;
+      heatOff = tempOFF;
+      interval = sRate * 1000;
+      maxFileData = maxData;
+      ///////
+      File f = SPIFFS.open(fName, "w");
+      if (!f) {
+
+        Serial.println("file open for properties failed");
+      }
+      else
+      {
+        Serial.println("====== Writing to config file =========");
+
+        f.print(heatOn); f.print( ","); f.print(heatOff);
+        f.print("~"); f.print(sRate);
+        f.print(":"); f.println(maxData);
+        Serial.println("Properties file updated");
+        f.close();
+      }
+    }
+
+    if (webMessage == "") {
+      webMessage = "Settings Updated";
+    }
+    Serial.println("WEB MESSAGE");
+    Serial.println(webMessage);
+    //gettemperature();
+    // Send back to home page
+    request->send_P(200, "text/html", home_html, processor);
   });
 
   server.on("/logged-out", HTTP_GET, [](AsyncWebServerRequest *request){
@@ -655,7 +789,23 @@ void setup(){
     Serial.println(inputMessage);
     request->send(200, "text/plain", "OK");
   });
-  
+/*
+  server.on("/clear", HTTP_ANY, [](AsyncWebServerRequest *request){
+    // handler for http://iPaddress/clear
+
+    // deletes all the stored data for temp and humidity
+    clearDataFile();
+
+    webMessage = "Data Cleared";
+
+    // read the DHT and use new values to start new file data
+    gettemperature();
+    updateDataFile();
+    request->send_P(200, "text/html", home_html, processor);
+    delay(100);
+
+  });
+*/
   // Start server
   server.begin();
 }
