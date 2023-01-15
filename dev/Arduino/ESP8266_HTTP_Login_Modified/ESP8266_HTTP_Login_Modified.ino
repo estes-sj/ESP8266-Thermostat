@@ -329,7 +329,162 @@ const char home_html[] PROGMEM = R"rawliteral(
     <meta http-equiv="refresh" content="60;url=http://%IP_ADDR%" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Chicken Coop Thermostat Relay</title>
-    <script
+    <style>
+      body {
+        background-color: #1d0f4a;
+        background-image: linear-gradient(45deg, #1d0f4a, #4b1989, #5d3d8f);
+        background: -webkit-gradient(
+          linear,
+          left top,
+          right top,
+          color-stop(0%%, transparent),
+          color-stop(50%%, rgb(110, 48, 48)),
+          color-stop(100%%, transparent)
+        ); /* Chrome, Safari4+ */
+        background: -webkit-linear-gradient (-45deg, red, blue); /* Chrome10+, Safari5.1+ */
+        background-image: -moz-linear-gradient(
+          45deg,
+          #1d0f4a,
+          #5d3d8f
+        ); /* FF3.6+ */
+        background: linear-gradient(
+          45deg,
+          #1a162b,
+          #4c1e83,
+          #5d3d8f
+        ); /* W3C This appeared on my chrome desktop*/
+        color: #e8e0f0;
+        font-family: helvetica, sans-serif;
+        font-size: 1.2em;
+      }
+
+      h1 {
+        color: #e8e0f0;
+        text-align: center;
+        padding-top: 0.4em;
+        font-size: 2.2em;
+        font-weight: 900;
+      }
+
+      .subheading {
+        color: #b4adc8;
+        text-align: center;
+      }
+
+      .dataMain,
+      .navigation,
+      #curve_chart {
+        background-color: #281b54;
+        border-radius: 25px;
+        padding: 20px;
+        margin: 0 auto;
+        margin-bottom: 1.2em;
+      }
+
+      .heatOn {
+        color: #30e3b5;
+      }
+      .heatOff {
+        color: #c33769;
+      }
+
+      .alert {
+        background-color: #281b54;
+        border-radius: 25px;
+        padding: 20px;
+        width: 40%%;
+        margin: 0 auto;
+        margin-bottom: 1.2em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #c33769;
+      }
+
+      .inputBox,
+      select,
+      textarea {
+        color: #e8e0f0;
+        background-color: #281b54;
+        border-radius: 0.5em;
+        width: 35px;
+        height: 30px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 5px;
+      }
+
+      textarea:focus,
+      input:focus {
+        background-color: #e8e0f0;
+        color: black;
+        font-weight: normal;
+      }
+
+      .navigation {
+        display: table;
+        width: 40%%;
+      }
+
+      a {
+        color: black;
+        text-decoration: none;
+      }
+
+      .empty {
+        width: 67%%;
+      }
+
+      .submit,
+      .refresh,
+      .clearData {
+        transition: all 0.8s;
+        background-color: #756d92;
+        border: 0.3em solid #756d92;
+        border-radius: 0.5em;
+        color: black;
+        font-weight: bold;
+      }
+
+      .refresh {
+        float: left;
+      }
+
+      .clearData {
+        float: right;
+      }
+
+      .submit:hover,
+      .refresh:hover,
+      .clearData:hover,
+      a:hover {
+        color: rgba(255, 255, 255, 1);
+        box-shadow: 0 5px 15px rgba(145, 92, 182, 1);
+      }
+
+      #chart_divTemp,
+      #chart_divTemp img,
+      #chart_divHumid,
+      #chart_divHumid img {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%%;
+      }
+
+      #curve_chart,
+      #curve_chart img {
+        width: 600px;
+        height: 300px;
+      }
+      #curve_chart img {
+        /* border-radius: 10%%; */
+        border: 10px solid #281b54;
+      }
+
+      @media (max-width: 900px) {
+      }
+    </style>
+  <script
       type="text/javascript"
       src="https://www.gstatic.com/charts/loader.js"
     ></script>
@@ -423,18 +578,39 @@ const char home_html[] PROGMEM = R"rawliteral(
   </head>
   <body>
     <form action="/submit">
-      <h1>ESP8266-12E DHT Thermostat IoT</h1>
-      <div style="color: red">%WEB_MSG%</div>
-      <table style="width: 800px">
+      <h1>Chicken Coop Thermostat</h1>
+      <p class="subheading">ESP8266-12E DHT Thermostat Controlled Relay IoT</p>
+    <div class="alert">
+        <!-- Remove span and break -->
+        <span></span><br />
+        %HEAT_STATUS%
+        <p>%WEB_MSG%</p>
+      </div>
+      <div style="color: red"></div>
+      <table class="dataMain">
+        <tr>
+          <td>
+            <div><b>Last Readings</b></div>
+            <div>Temperature: %TEMP_F2%&deg; F</div>
+            <div>Humidity: %HUMIDITY%&percnt;</div>
+            <div>Data Lines: %DATA_LINES%</div>
+            <div>Sample Rate: %SAMPLE_RATE% seconds</div>
+          </td>
+          <td><div id="chart_divTemp"></div></td>
+          <td><div id="chart_divHumid"></div></td>
+        </tr>
+      </table>
+    <table class="dataMain">
         <tr>
           <td>
             <div>Heat On Setting: &le; %HEAT_ON_TEMP%&deg; F</div>
             <div>Heat Off Setting: &ge; %HEAT_OFF_TEMP%&deg; F</div>
           </td>
-          <td style="text-align: right">
+          <td>
             Heat On: &le;
             <input
               type="text"
+              class="inputBox"
               value="%HEAT_ON_TEMP%"
               name="heatOn"
               maxlength="3"
@@ -443,16 +619,18 @@ const char home_html[] PROGMEM = R"rawliteral(
             Heat Off: &ge;
             <input
               type="text"
+              class="inputBox"
               value="%HEAT_OFF_TEMP%"
               name="heatOff"
               maxlength="3"
               size="2"
             /><br />
           </td>
-          <td style="text-align: right">
+          <td>
             Sample Rate (seconds):
             <input
               type="text"
+              class="inputBox"
               value="%SAMPLE_RATE%"
               name="sRate"
               maxlength="3"
@@ -461,34 +639,26 @@ const char home_html[] PROGMEM = R"rawliteral(
             Maximum Chart Data:
             <input
               type="text"
+              class="inputBox"
               value="%MAX_FILE_DATA%"
               name="maxData"
               maxlength="3"
               size="2"
             /><br />
           </td>
-          <td><input type="submit" value="Submit" /></td>
+          <td><input class="submit" type="submit" value="Submit" /></td>
         </tr>
       </table>
-      <table style="width: 800px">
-        <tr>
-          <td>
-            <div style="width: 300px"><b>Last Readings</b></div>
-            <div>Temperature: %TEMP_F2%&deg; F</div>
-            <div>Humidity: %HUMIDITY%&percnt;</div>
-            %HEAT_STATUS%
-            <div>Data Lines: %DATA_LINES%</div>
-            <div>Sample Rate: %SAMPLE_RATE% seconds</div>
-            <div><a href="http://%IP_ADDR%">Refresh</a></div>
-          </td>
-          <td><div id="chart_divTemp" style="width: 250px"></div></td>
-          <td><div id="chart_divHumid" style="width: 250px"></div></td>
-        </tr>
-      </table>
-      <div id="curve_chart" style="width: 1000px; height: 500px"></div>
-      <div><a href="/clear">Clear Data</a></div>
-    </form>
+      <div id="curve_chart"></div>
+      <div class="navigation">
+    <button class="refresh" type="button">
+      <a href="http://%IP_ADDR%"
+      >Refresh</a></button>
+    <button class="clearData" type="button">
+    <a href="/clear">Clear Data</a></button>
     <button onclick="logoutButton()">Logout</button>
+    </div>
+    </form>
   </body>
 </html>
 
@@ -546,10 +716,10 @@ String processor(const String& var){
   }
   if (var == "HEAT_STATUS"){
     if (digitalRead(RELAYPIN) == LOW) {
-      return "<div>Heat is OFF</div>";
+      return "<div class='heatOff'>Heat is OFF</div>";
     }
     else {
-      return "<div>Heat is ON</div>";
+      return "<div class='heatOn'>Heat is ON</div>";
     }
   }
   return String();
