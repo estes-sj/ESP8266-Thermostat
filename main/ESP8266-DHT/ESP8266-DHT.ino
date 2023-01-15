@@ -12,8 +12,8 @@
 #define DHTPIN D4 // D4 or 2
 #define RELAYPIN D2 // D2 or 4
 
-const char* ssid     = "";
-const char* password = "";
+const char* ssid     = "I killed your cat; sorry";
+const char* password = "35micesaved";
 
 int heatOn = 69;
 int heatOff = 73;
