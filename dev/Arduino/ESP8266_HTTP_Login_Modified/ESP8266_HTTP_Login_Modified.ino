@@ -7,20 +7,20 @@
 *********/
 
 // Import required libraries
-#include <ESP8266WiFi.h>
-#include <ESPAsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-// DHT Relay
+#include <ESP8266WiFi.h> // For WiFi
+#include <ESPAsyncTCP.h> // For Web Server
+#include <ESPAsyncWebServer.h> // For Web Server
 #include <FS.h> // FOR SPIFFS
 #include <ctype.h> // for isNumber check
-#include <DHT.h>
+#include <DHT.h> // For DHT Sensor
+
 #define DHTTYPE DHT22
 #define DHTPIN D4 // D4 or 2
 #define RELAYPIN D2 // D2 or 4
   
 // Replace with your network credentials
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "FILL THIS";
+const char* password = "FILL THIS";
 
 const char* http_username = "admin";
 const char* http_password = "admin";
@@ -51,6 +51,9 @@ String webMessage = "";
 // Generally, you should use "unsigned long" for variables that hold time to handle rollover
 unsigned long previousMillis = 0;        // will store last temp was read
 long interval = 20000;              // interval at which to read sensor
+
+// Boolean to handle restarting the device
+boolean restartNow = false;
 
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -264,51 +267,6 @@ String outputState(){
   return "";
 }
 
-const char index_html[] PROGMEM = R"rawliteral(
-<!DOCTYPE HTML><html>
-<head>
-  <title>ESP Web Server</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <style>
-    html {font-family: Arial; display: inline-block; text-align: center;}
-    h2 {font-size: 2.6rem;}
-    body {max-width: 600px; margin:0px auto; padding-bottom: 10px;}
-    .switch {position: relative; display: inline-block; width: 120px; height: 68px} 
-    .switch input {display: none}
-    .slider {position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; border-radius: 34px}
-    .slider:before {position: absolute; content: ""; height: 52px; width: 52px; left: 8px; bottom: 8px; background-color: #fff; -webkit-transition: .4s; transition: .4s; border-radius: 68px}
-    input:checked+.slider {background-color: #2196F3}
-    input:checked+.slider:before {-webkit-transform: translateX(52px); -ms-transform: translateX(52px); transform: translateX(52px)}
-  </style>
-</head>
-<body>
-  <h2>ESP Web Server</h2>
-  <button onclick="logoutButton()">Logout</button>
-  <p>Ouput - GPIO 2 - State <span id="state">%STATE%</span></p>
-  %BUTTONPLACEHOLDER%
-<script>function toggleCheckbox(element) {
-  var xhr = new XMLHttpRequest();
-  if(element.checked){ 
-    xhr.open("GET", "/update?state=1", true); 
-    document.getElementById("state").innerHTML = "ON";  
-  }
-  else { 
-    xhr.open("GET", "/update?state=0", true); 
-    document.getElementById("state").innerHTML = "OFF";      
-  }
-  xhr.send();
-}
-function logoutButton() {
-  var xhr = new XMLHttpRequest();
-  xhr.open("GET", "/logout", true);
-  xhr.send();
-  setTimeout(function(){ window.open("/logged-out","_self"); }, 1000);
-}
-</script>
-</body>
-</html>
-)rawliteral";
-
 const char logout_html[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML><html>
 <head>
@@ -323,13 +281,230 @@ const char logout_html[] PROGMEM = R"rawliteral(
 
 // Remember to remove any instances of ");" which will prematurely close the literal
 // This is common in any javascript code
+// Percent signs need to be escaped with a percent sign if literal
 const char home_html[] PROGMEM = R"rawliteral(
 <html>
   <head>
     <meta http-equiv="refresh" content="60;url=http://%IP_ADDR%" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Chicken Coop Thermostat Relay</title>
-    <script
+    <style>
+      body {
+        background-color: #1d0f4a;
+        background-image: linear-gradient(45deg, #1d0f4a, #4b1989, #5d3d8f);
+        background: -webkit-gradient(
+          linear,
+          left top,
+          right top,
+          color-stop(0%%, transparent),
+          color-stop(50%%, rgb(110, 48, 48)),
+          color-stop(100%%, transparent)
+        ); /* Chrome, Safari4+ */
+        background: -webkit-linear-gradient (-45deg, red, blue); /* Chrome10+, Safari5.1+ */
+        background-image: -moz-linear-gradient(
+          45deg,
+          #1d0f4a,
+          #5d3d8f
+        ); /* FF3.6+ */
+        background: linear-gradient(
+          45deg,
+          #1a162b,
+          #4c1e83,
+          #5d3d8f
+        ); /* W3C This appeared on my chrome desktop*/
+        color: #e8e0f0;
+        font-family: helvetica, sans-serif;
+        font-size: 1.2em;
+      }
+
+      h1 {
+        color: #e8e0f0;
+        text-align: center;
+        padding-top: 0.4em;
+        font-size: 2.2em;
+        font-weight: 900;
+      }
+
+      .subheading {
+        color: #b4adc8;
+        text-align: center;
+      }
+
+      .dataMain,
+      .navigation,
+      .lastReadings,
+      #curve_chart {
+        background-color: #281b54;
+        border-radius: 25px;
+        padding: 20px;
+        margin: 0 auto;
+        margin-bottom: 1.2em;
+        font-weight: 700;
+      }
+      
+      .lastReadings {
+        display: flex;
+        width: 25em;
+      }
+      .dataMain tr td {
+        padding-right: 1em;
+      }      
+      .heatOn {
+        color: #30e3b5;
+      }
+      .heatOff {
+        color: #c33769;
+      }
+
+      .alert {
+        background-color: #281b54;
+        border-radius: 25px;
+        padding: 20px;
+        width: 40%%;
+        margin: 0 auto;
+        margin-bottom: 1.2em;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1em;
+        color: #c33769;
+      }
+      .alert p {
+        font-size: 0.6em;
+      }   
+      .inputBox,
+      select,
+      textarea {
+        color: #e8e0f0;
+        background-color: #281b54;
+        border-radius: 0.5em;
+        width: 35px;
+        height: 30px;
+        font-weight: bold;
+        text-align: center;
+        margin-bottom: 5px;
+      }
+
+      textarea:focus,
+      input:focus {
+        background-color: #e8e0f0;
+        color: black;
+        font-weight: normal;
+      }
+
+      .navigation {
+        display: grid;
+        width: fit-content;
+      }
+      .navigation button {
+        width: 10em;
+        margin-left: 10em;
+        margin-right: 10em;
+        margin-top: 1em;
+        margin-bottom: 1em;
+      }      
+      .nav_left {
+        text-align: center;
+      }
+      .nav_right {
+        text-align: center;
+      }      
+      a {
+        color: black;
+        text-decoration: none;
+      }
+
+      .empty {
+        width: 67%%;
+      }
+
+      .submit,
+      .refresh,
+      .clearData {
+        transition: all 0.8s;
+        background-color: #756d92;
+        border: 0.3em solid #756d92;
+        border-radius: 0.5em;
+        color: black;
+        font-weight: bold;
+      }
+
+      .refresh,
+      .clearData {
+        margin-left: 2em;
+      }
+
+      .submit:hover,
+      .refresh:hover,
+      .clearData:hover,
+      a:hover {
+        color: rgba(255, 255, 255, 1);
+        box-shadow: 0 5px 15px rgba(145, 92, 182, 1);
+      }
+
+      #chart_divTemp,
+      #chart_divTemp img,
+      #chart_divHumid,
+      #chart_divHumid img {
+        width: 150px;
+        height: 150px;
+        border-radius: 50%%;
+      }
+
+      #curve_chart,
+      #curve_chart img {
+        width: 100%%;
+        min-height: 400px;
+        min-width: 300;
+        max-width: 900px;
+      }
+
+      @media (max-width: 950px) {
+        #curve_chart {
+          padding-left: 0;
+          padding-right: 0;
+          margin: 0 auto;
+          margin-bottom: 1em;
+        }
+        .navigation button {
+          width: 10em;
+          margin-left: 5em;
+          margin-right: 5em;
+          margin-top: 1em;
+          margin-bottom: 1em;
+        }
+      }
+
+      @media (max-width: 660px) {
+        body {
+          background-image: none;
+          background-color: #32115a;
+        }
+        .alert {
+          width: 80%%;
+        }     
+        .navigation button {
+          width: 10em;
+          margin-left: 1em;
+          margin-right: 1em;
+          margin-top: 1em;
+          margin-bottom: 1em;
+        }
+      }
+      @media (max-width: 455px) {
+        .lastReadings {
+          display: block;
+          width: 80%%;
+        }
+        .lastReadings table {
+          display: flex;
+          justify-content: center;
+        }
+        .dataMain tr td div {
+          padding: 1.5em 0em;
+        }
+      }
+    </style>
+  <script
       type="text/javascript"
       src="https://www.gstatic.com/charts/loader.js"
     ></script>
@@ -413,6 +588,11 @@ const char home_html[] PROGMEM = R"rawliteral(
         )
         chart.draw(data, options);
       }
+      $(window).resize(function () {
+        drawChart()
+        drawTempChart()
+        drawHumidChart()
+      })      
       function logoutButton() {
         var xhr = new XMLHttpRequest();
         xhr.open("GET", "/logout", true);
@@ -423,72 +603,113 @@ const char home_html[] PROGMEM = R"rawliteral(
   </head>
   <body>
     <form action="/submit">
-      <h1>ESP8266-12E DHT Thermostat IoT</h1>
-      <div style="color: red">%WEB_MSG%</div>
-      <table style="width: 800px">
+      <h1>Chicken Coop Thermostat Relay</h1>
+      <p class="subheading">ESP8266-12E DHT Thermostat Controlled Relay IoT</p>
+    <div class="alert">
+        <br />
+        %HEAT_STATUS%
+        <p>%WEB_MSG%</p>
+      </div>
+      <div style="color: red"></div>
+      <div class="lastReadings">
+        <table>
+          <tr>
+            <td>
+              <div><b>Last Readings</b></div>
+              <div>Temperature: %TEMP_F2%&deg; F</div>
+              <div>Humidity: %HUMIDITY%&percnt;</div>
+              <div>Data Lines: %DATA_LINES%</div>
+              <div>Sample Rate: %SAMPLE_RATE% seconds</div>
+            </td>
+          </tr>
+        </table>
+        <table>
+          <td><div id="chart_divTemp"></div></td>
+          <td><div id="chart_divHumid"></div></td>
+        </table>
+      </div>
+    <table class="dataMain">
         <tr>
           <td>
             <div>Heat On Setting: &le; %HEAT_ON_TEMP%&deg; F</div>
             <div>Heat Off Setting: &ge; %HEAT_OFF_TEMP%&deg; F</div>
           </td>
-          <td style="text-align: right">
-            Heat On: &le;
-            <input
-              type="text"
-              value="%HEAT_ON_TEMP%"
-              name="heatOn"
-              maxlength="3"
-              size="2"
-            /><br />
-            Heat Off: &ge;
-            <input
-              type="text"
-              value="%HEAT_OFF_TEMP%"
-              name="heatOff"
-              maxlength="3"
-              size="2"
-            /><br />
-          </td>
-          <td style="text-align: right">
-            Sample Rate (seconds):
-            <input
-              type="text"
-              value="%SAMPLE_RATE%"
-              name="sRate"
-              maxlength="3"
-              size="2"
-            /><br />
-            Maximum Chart Data:
-            <input
-              type="text"
-              value="%MAX_FILE_DATA%"
-              name="maxData"
-              maxlength="3"
-              size="2"
-            /><br />
-          </td>
-          <td><input type="submit" value="Submit" /></td>
-        </tr>
-      </table>
-      <table style="width: 800px">
-        <tr>
           <td>
-            <div style="width: 300px"><b>Last Readings</b></div>
-            <div>Temperature: %TEMP_F2%&deg; F</div>
-            <div>Humidity: %HUMIDITY%&percnt;</div>
-            %HEAT_STATUS%
-            <div>Data Lines: %DATA_LINES%</div>
-            <div>Sample Rate: %SAMPLE_RATE% seconds</div>
-            <div><a href="http://%IP_ADDR%">Refresh</a></div>
+            <div>          
+              Heat On: &le;
+              <input
+                type="text"
+                class="inputBox"
+                value="%HEAT_ON_TEMP%"
+                name="heatOn"
+                maxlength="3"
+                size="2"
+              /><br />
+            </div>
+            <div>            
+              Heat Off: &ge;
+              <input
+                type="text"
+                class="inputBox"
+                value="%HEAT_OFF_TEMP%"
+                name="heatOff"
+                maxlength="3"
+                size="2"
+              /><br />
+            </div>            
           </td>
-          <td><div id="chart_divTemp" style="width: 250px"></div></td>
-          <td><div id="chart_divHumid" style="width: 250px"></div></td>
+          <td>
+            <div>          
+              Sample Rate (seconds):
+              <input
+                type="text"
+                class="inputBox"
+                value="%SAMPLE_RATE%"
+                name="sRate"
+                maxlength="3"
+                size="2"
+              /><br />
+            </div>
+            <div>        
+              Maximum Chart Data:
+              <input
+                type="text"
+                class="inputBox"
+                value="%MAX_FILE_DATA%"
+                name="maxData"
+                maxlength="3"
+                size="2"
+              /><br />
+            </div>            
+          </td>
+          <td><input class="submit" type="submit" value="Submit" /></td>
         </tr>
       </table>
-      <div id="curve_chart" style="width: 1000px; height: 500px"></div>
-      <div><a href="/clear">Clear Data</a></div>
+      <div id="curve_chart"></div>
+      <table class="navigation">
+        <tr>
+          <td class="nav_left">        
+            <button class="refresh" type="button">
+              <a href="http://%IP_ADDR%"
+              >Refresh</a></button>
+          </td>
+          <td class="nav_right">          
+            <button class="clearData" type="button">
+              <a href="/clear">Clear Data</a>
+            </button>
+          </td>
+        </tr>
+        <tr>
+          <td class="nav_left">        
+            <button class="refresh" onclick="logoutButton()">Logout</button>
+          </td>
+          <td class="nav_right">          
+            <button class="clearData" type="button">
+            <a href="/restart">Restart ESP8266</a></button>
+          </td>
+        </tr>
+      </table>
     </form>
-    <button onclick="logoutButton()">Logout</button>
   </body>
 </html>
 
@@ -521,7 +742,13 @@ String processor(const String& var){
    return String((int)humidity);
   }
   if (var == "WEB_MSG"){
-   return webMessage;
+   // If the site reloads, reset the web message since it has been acknowledged
+   if (webMessage.length() > 0){
+    String webMessageToSend = webMessage;
+    webMessage = ""; 
+    return webMessageToSend;
+   }
+   return "<h3></h3>";
   }
   if (var == "HEAT_ON_TEMP"){
    return String((int)heatOn);
@@ -546,10 +773,10 @@ String processor(const String& var){
   }
   if (var == "HEAT_STATUS"){
     if (digitalRead(RELAYPIN) == LOW) {
-      return "<div>Heat is OFF</div>";
+      return "<div class='heatOff'>Heat is OFF</div>";
     }
     else {
-      return "<div>Heat is ON</div>";
+      return "<div class='heatOn'>Heat is ON</div>";
     }
   }
   return String();
@@ -658,6 +885,14 @@ void setup(){
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
     if(!request->authenticate(http_username, http_password))
       return request->requestAuthentication();
+      
+    // Handle redirect before restarting the device
+    if (restartNow) {
+      restartNow = false;
+      ESP.restart();
+      Serial.println("Restart Complete");
+    }
+      
     request->send_P(200, "text/html", home_html, processor);
   });
 
@@ -679,8 +914,8 @@ void setup(){
 
     webMessage = "";
     
-  // Format = http://192.168.1.201/submit?heatOn=80&heatOff=81&sRate=20&maxData=60
-  
+    // Format = http://192.168.1.201/submit?heatOn=80&heatOff=81&sRate=20&maxData=60
+    
     if (request->hasParam(PARAM_INPUT_1)) {
       // The name of the parameter
       inputParam_1 = PARAM_INPUT_1;
@@ -802,7 +1037,7 @@ void setup(){
   server.on("/logged-out", HTTP_GET, [](AsyncWebServerRequest *request){
     request->send_P(200, "text/html", logout_html, processor);
   });
-
+  
   // Send a GET request to <ESP_IP>/update?state=<inputMessage>
   server.on("/update", HTTP_GET, [] (AsyncWebServerRequest *request) {
     if(!request->authenticate(http_username, http_password))
@@ -839,6 +1074,11 @@ void setup(){
 
   });
 
+  server.on("/restart", HTTP_ANY, [](AsyncWebServerRequest *request){
+    restartNow = true;
+    request->redirect("/");
+  });
+  
   // Start server
   server.begin();
 }
