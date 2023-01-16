@@ -19,8 +19,8 @@
 #define RELAYPIN D2 // D2 or 4
   
 // Replace with your network credentials
-const char* ssid = "";
-const char* password = "";
+const char* ssid = "FILL THIS";
+const char* password = "FILL THIS";
 
 const char* http_username = "admin";
 const char* http_password = "admin";
@@ -368,7 +368,9 @@ const char home_html[] PROGMEM = R"rawliteral(
         font-size: 1.1em;
         color: #c33769;
       }
-
+      .alert p {
+        font-size: 0.6em;
+      }   
       .inputBox,
       select,
       textarea {
@@ -479,10 +481,7 @@ const char home_html[] PROGMEM = R"rawliteral(
         }
         .alert {
           width: 80%%;
-        }
-        .alert p {
-          font-size: 0.6em;
-        }        
+        }     
         .navigation button {
           width: 10em;
           margin-left: 1em;
@@ -749,7 +748,7 @@ String processor(const String& var){
     webMessage = ""; 
     return webMessageToSend;
    }
-   return webMessage;
+   return "<h3></h3>";
   }
   if (var == "HEAT_ON_TEMP"){
    return String((int)heatOn);
