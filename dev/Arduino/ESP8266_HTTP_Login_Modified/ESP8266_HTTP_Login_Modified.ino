@@ -267,6 +267,18 @@ String outputState(){
   return "";
 }
 
+const char logout_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE HTML><html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+  <p>Logged out or <a href="/">return to homepage</a>.</p>
+  <p><strong>Note:</strong> close all web browser tabs to complete the logout process.</p>
+</body>
+</html>
+)rawliteral";
+
 // Remember to remove any instances of ");" which will prematurely close the literal
 // This is common in any javascript code
 // Percent signs need to be escaped with a percent sign if literal
