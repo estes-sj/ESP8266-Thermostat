@@ -13,6 +13,9 @@
 #include <FS.h> // FOR SPIFFS
 #include <ctype.h> // for isNumber check
 #include <DHT.h> // For DHT Sensor
+#include <WiFiUdp.h>
+#include <NTPClient.h>
+#include "time.h"
 
 #define DHTTYPE DHT22
 #define DHTPIN D4 // D4 or 2
@@ -55,6 +58,11 @@ long interval = 20000;              // interval at which to read sensor
 // Boolean to handle restarting the device
 boolean restartNow = false;
 
+// Define NTP Client to get time
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP, "time1.google.com");
+String lastRecordedTime = "Unknown";
+
 // Create AsyncWebServer object on port 80
 AsyncWebServer server(80);
 
@@ -89,6 +97,7 @@ void gettemperature() {
   else {
      humidity = new_humidity;
      temp_f = new_temp_f;
+     lastRecordedTime = getNTPFormattedTime();
   }
 
   // turn the relay switch Off or On depending on the temperature reading
@@ -200,6 +209,14 @@ void updateDataFile()
   Serial.print("millis: ");
   Serial.println(millis());
 
+}
+
+//////////////////////////////////////////////////////////////////////
+// Retrieves the current time in hh:mm:ss format                    //
+//////////////////////////////////////////////////////////////////////
+String getNTPFormattedTime() {
+  timeClient.update();
+  return timeClient.getFormattedTime();  
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -616,6 +633,7 @@ const char home_html[] PROGMEM = R"rawliteral(
           <tr>
             <td>
               <div><b>Last Readings</b></div>
+              <div>Time: %LAST_REC_TIME% EST</div>
               <div>Temperature: %TEMP_F2%&deg; F</div>
               <div>Humidity: %HUMIDITY%&percnt;</div>
               <div>Data Lines: %DATA_LINES%</div>
@@ -717,7 +735,6 @@ const char home_html[] PROGMEM = R"rawliteral(
 
 // Replaces placeholder with button section in your web page
 String processor(const String& var){
-  Serial.println(var);
   if(var == "BUTTONPLACEHOLDER"){
     String buttons ="";
     String outputStateValue = outputState();
@@ -744,11 +761,14 @@ String processor(const String& var){
   if (var == "WEB_MSG"){
    // If the site reloads, reset the web message since it has been acknowledged
    if (webMessage.length() > 0){
-    String webMessageToSend = webMessage;
+    String webMessageToSend = getNTPFormattedTime() + " " + webMessage;
     webMessage = ""; 
     return webMessageToSend;
    }
    return "<h3></h3>";
+  }
+  if (var == "LAST_REC_TIME"){
+    return lastRecordedTime;
   }
   if (var == "HEAT_ON_TEMP"){
    return String((int)heatOn);
@@ -792,7 +812,7 @@ void setup(){
   
   // Connect to Wi-Fi
   WiFi.begin(ssid, password);
-  WiFi.config(IPAddress(192, 168, 1, 201), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0));
+  WiFi.config(IPAddress(192, 168, 1, 201), IPAddress(192, 168, 1, 1), IPAddress(255, 255, 255, 0), IPAddress(192, 168, 1, 53));
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi..");
@@ -801,6 +821,15 @@ void setup(){
   // Print ESP Local IP Address
   Serial.println(WiFi.localIP());
 
+  // Initialize a NTPClient to get time
+  timeClient.begin();
+  // Set offset time in seconds to adjust for your timezone, for example:
+  // GMT +1 = 3600
+  // GMT +8 = 28800
+  // GMT -1 = -3600
+  // GMT 0 = 0
+  timeClient.setTimeOffset(-18000);  
+  
 //////////////////////////////////////////////////////////////
   pinMode(RELAYPIN, OUTPUT);
   digitalWrite(RELAYPIN, LOW);
@@ -1082,7 +1111,7 @@ void setup(){
   // Start server
   server.begin();
 }
-  
+
 void loop() {
   
   // check timer to see if it's time to update the data file with another DHT reading
@@ -1094,6 +1123,11 @@ void loop() {
     // save the last time you read the sensor
     previousMillis = currentMillis;
 
+    //NTP
+    String formattedTime = getNTPFormattedTime();
+    Serial.print("Time: ");
+    Serial.println(formattedTime);
+    
     gettemperature();
 
     Serial.print("Temp: ");
