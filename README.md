@@ -16,8 +16,8 @@ The aim of this project is to produce a modified layout to the web server, heat 
 ![Schematic ESP8266 Temperature Controlled Relay Bottom View](docs/Schematic_ESP8266%20Temperature%20Controlled%20Relay_2023-01-09_Bottom%20View.png)
 
 #### PCB
-![Front of Board](docs/pcb_wiring_back.JPEG)
-![Back of Board (before using hot glue)](pcb_wiring_front.JPEG)
+![Front of Board](docs/pcb_wiring_front.JPEG)
+![Back of Board (before using hot glue)](docs/pcb_wiring_back.JPEG)
 
 
 #### Materials
