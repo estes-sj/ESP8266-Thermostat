@@ -1,9 +1,7 @@
 /*********
-  Rui Santos
-  Complete project details at https://RandomNerdTutorials.com/esp32-esp8266-web-server-http-authentication/
-  
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
+Written by Samuel Estes
+Web Authentication code based off Rui Santos
+Web Design code originally based off dmainmon
 *********/
 
 // Import required libraries
