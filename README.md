@@ -12,6 +12,7 @@ The aim of this project is to produce a modified layout to the web server, heat 
 + NTP Client
 + Schematic Diagram
 
+
 #### Schematic Diagram
 ![Schematic ESP8266 Temperature Controlled Relay Bottom View](docs/Schematic_ESP8266%20Temperature%20Controlled%20Relay_2023-01-09_Bottom%20View.png)
 
@@ -40,3 +41,4 @@ Not pictured: Ferrule Crimpers, extension cord, ceramic heat-bulbs, hot glue
 4. If everything works right, I recommend hot-gluing the back of the PCB to keep any wires from breaking off. If for outside use, store the board in something like a gang box.
 ##### Software
 1. Download Arduino
+
